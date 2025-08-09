@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  topic: MyString
+  category: MyString
+  vote_options: 
+  expires_at: 2025-08-08 17:44:34
+
+two:
+  topic: MyString
+  category: MyString
+  vote_options: 
+  expires_at: 2025-08-08 17:44:34
