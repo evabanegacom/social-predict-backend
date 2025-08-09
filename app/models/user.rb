@@ -16,6 +16,10 @@ class User < ApplicationRecord
     self.jti = SecureRandom.uuid
   end
 
+    def admin?
+      admin
+    end
+
   def self.find_by_identifier(identifier)
     where('username = ? OR phone = ?', identifier, identifier).first
   end

@@ -5,10 +5,11 @@ class Prediction < ApplicationRecord
   validates :category, presence: true, inclusion: { in: %w[Music Politics Sports Other] }
   validates :vote_options, presence: true
   validates :expires_at, presence: true
-  validates :status, presence: true, inclusion: { in: %w[pending approved rejected] }
+  # validates :status, presence: true, inclusion: { in: %w[pending approved rejected] }
   validates :user_id, presence: true
+  validates :status, inclusion: { in: %w[pending approved resolved rejected], message: "%{value} is not a valid status" }
   validates :result, inclusion: { in: %w[Yes No], allow_nil: true }
-
+  
   after_update :process_points, if: :result_changed?
 
   def time_left

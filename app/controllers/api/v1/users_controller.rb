@@ -1,6 +1,8 @@
 class Api::V1::UsersController < ApplicationController
   # skip_before_action :authenticate_user, only: [:create, :login]
   before_action :authenticate_user, only: [:me]
+  before_action :set_user, only: [:update_admin]
+  # before_action :authorize_admin, only: [:update_admin]
 
   def create
     user = User.new(user_params)
@@ -22,6 +24,22 @@ class Api::V1::UsersController < ApplicationController
       render json: { status: 200, message: 'Logged in successfully.', data: { user: user, token: token } }, status: :ok
     else
       render json: { status: 401, message: 'Invalid identifier or password.' }, status: :unauthorized
+    end
+  end
+
+  def update_admin
+    if @user.update(admin: admin_params[:admin])
+      render json: {
+        status: 200,
+        message: "User admin status updated successfully.",
+        data: {
+          id: @user.id,
+          username: @user.username,
+          admin: @user.admin
+        }
+      }, status: :ok
+    else
+      render json: { status: 422, message: @user.errors.full_messages.join(', ') }, status: :unprocessable_entity
     end
   end
 
@@ -52,6 +70,16 @@ class Api::V1::UsersController < ApplicationController
 
   def user_params
     params.require(:user).permit(:username, :phone, :password, :password_confirmation)
+  end
+
+  def admin_params
+    params.require(:user).permit(:admin)
+  end
+
+  def set_user
+    @user = User.find(params[:id])
+  rescue ActiveRecord::RecordNotFound
+    render json: { status: 404, message: "User not found." }, status: :not_found
   end
 
   def encode_token(user)
