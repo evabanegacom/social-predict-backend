@@ -55,6 +55,7 @@ class Api::V1::PredictionsController < ApplicationController
     prediction.status = 'pending'
     prediction.vote_options = { yes: 0, no: 0, maybe: 0 }
     if prediction.save
+      @current_user.activities.create!(action: 'created_prediction', target_type: 'Prediction', target_id: prediction.id)
       render json: {
         status: 201,
         message: 'Prediction created successfully. Awaiting admin approval.',
@@ -101,6 +102,7 @@ class Api::V1::PredictionsController < ApplicationController
     vote = @current_user.votes.build(prediction: @prediction, choice: params[:choice])
     if vote.save
       @prediction.update_vote_counts
+      @current_user.activities.create!(action: 'voted', target_type: 'Prediction', target_id: @prediction.id)
       render json: {
         status: 200,
         message: 'Vote submitted successfully.',
@@ -110,6 +112,20 @@ class Api::V1::PredictionsController < ApplicationController
       render json: { status: 422, message: vote.errors.full_messages.join(', ') }, status: :unprocessable_entity
     end
   end
+
+  # def vote
+  #   vote = @current_user.votes.build(prediction: @prediction, choice: params[:choice])
+  #   if vote.save
+  #     @prediction.update_vote_counts
+  #     render json: {
+  #       status: 200,
+  #       message: 'Vote submitted successfully.',
+  #       data: { prediction_id: @prediction.id, choice: vote.choice, vote_options: @prediction.vote_options }
+  #     }, status: :ok
+  #   else
+  #     render json: { status: 422, message: vote.errors.full_messages.join(', ') }, status: :unprocessable_entity
+  #   end
+  # end
 
   def votes
     @current_user_votes = @current_user.votes.includes(:prediction).map do |vote|

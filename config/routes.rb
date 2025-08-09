@@ -14,6 +14,7 @@ Rails.application.routes.draw do
       put 'predictions/:id/status', to: 'predictions#update_status'
       get 'predictions/:id', to: 'predictions#show'
       get 'leaderboards', to: 'leaderboards#index'
+      resources :activities, only: [:index]
       resources :rewards, only: [:index, :create] do
         member do
           post 'redeem'

@@ -6,6 +6,7 @@ class User < ApplicationRecord
   has_many :rewards, through: :user_rewards
   validates :username, uniqueness: true, allow_blank: true
   validates :phone, uniqueness: true, allow_blank: true
+  has_many :activities
   validates :xp, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
   validate :username_or_phone_required
   before_create :generate_jti

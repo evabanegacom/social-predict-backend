@@ -35,6 +35,7 @@ def redeem
     @reward.update!(stock: @reward.stock - 1)
     code = @reward.reward_type.in?(['airtime', 'data']) ? generate_unique_code : nil
     user_reward = @current_user.user_rewards.create!(reward: @reward, redeemed_at: Time.now.utc, code: code)
+    @current_user.activities.create!(action: 'redeemed_reward', target_type: 'Reward', target_id: @reward.id)
     render json: {
         status: 200,
         message: "Reward redeemed successfully.",
