@@ -2,9 +2,18 @@ class ProcessExpiredPredictionsJob < ApplicationJob
   queue_as :default
 
   def perform
-    Prediction.where(status: 'approved').where('expires_at < ?', Time.now.utc).where(result: nil).each do |prediction|
-      # For demo, randomly set result; in production, use admin input or external data
-      prediction.update(result: %w[Yes No].sample)
+    predictions = Prediction.where(status: 'approved')
+                             .where('expires_at < ?', Time.current)
+                             .where(result: nil)
+  
+    puts "Found #{predictions.count} expired predictions"
+  
+    predictions.each do |prediction|
+      result = %w[Yes No].sample
+      prediction.update(result: result)
+      puts "Updated Prediction ##{prediction.id} => #{result}"
     end
   end
+  
 end
+
