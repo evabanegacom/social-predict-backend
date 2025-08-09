@@ -1,5 +1,5 @@
 class Api::V1::PredictionsController < ApplicationController
-  before_action :authenticate_user
+  before_action :authenticate_user, except: [:index]
   before_action :set_prediction, only: [:vote]
   before_action :authorize_admin, only: [:update_status]
 

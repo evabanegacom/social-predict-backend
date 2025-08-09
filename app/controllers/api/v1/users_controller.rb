@@ -1,6 +1,6 @@
 class Api::V1::UsersController < ApplicationController
   # skip_before_action :authenticate_user, only: [:create, :login]
-  before_action :authenticate_user, only: [:me]
+  before_action :authenticate_user, only: [:me, :logout]
   before_action :set_user, only: [:update_admin]
   # before_action :authorize_admin, only: [:update_admin]
 
@@ -52,8 +52,8 @@ class Api::V1::UsersController < ApplicationController
   end
 
   def logout
-    if current_user
-      current_user.update(jti: SecureRandom.uuid)
+    if @current_user
+      @current_user.update(jti: SecureRandom.uuid)
       render json: { status: 200, message: 'Logged out successfully.' }, status: :ok
     else
       render json: { status: 401, message: 'No active session.' }, status: :unauthorized
@@ -77,8 +77,11 @@ class Api::V1::UsersController < ApplicationController
   private
 
   def user_params
-    params.require(:user).permit(:username, :phone, :password, :password_confirmation)
+    permitted = params.require(:user).permit(:username, :phone, :password, :password_confirmation)
+    permitted[:phone] = nil if permitted[:phone].blank?
+    permitted
   end
+  
 
   def admin_params
     params.require(:user).permit(:admin)
