@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_08_09_153720) do
+ActiveRecord::Schema[7.0].define(version: 2025_08_09_191347) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -68,6 +68,9 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_09_153720) do
     t.integer "xp", default: 0
     t.integer "points", default: 0, null: false
     t.boolean "admin", default: false, null: false
+    t.integer "streak", default: 0, null: false
+    t.datetime "last_active_at"
+    t.string "push_token"
     t.index ["jti"], name: "index_users_on_jti", unique: true
     t.index ["phone"], name: "index_users_on_phone", unique: true
     t.index ["username"], name: "index_users_on_username", unique: true

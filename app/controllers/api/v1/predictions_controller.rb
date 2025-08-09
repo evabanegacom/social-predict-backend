@@ -56,6 +56,7 @@ class Api::V1::PredictionsController < ApplicationController
     prediction.vote_options = { yes: 0, no: 0, maybe: 0 }
     if prediction.save
       @current_user.activities.create!(action: 'created_prediction', target_type: 'Prediction', target_id: prediction.id)
+      @current_user.update_streak # Update streak
       render json: {
         status: 201,
         message: 'Prediction created successfully. Awaiting admin approval.',
@@ -103,6 +104,7 @@ class Api::V1::PredictionsController < ApplicationController
     if vote.save
       @prediction.update_vote_counts
       @current_user.activities.create!(action: 'voted', target_type: 'Prediction', target_id: @prediction.id)
+      @current_user.update_streak # Update streak
       render json: {
         status: 200,
         message: 'Vote submitted successfully.',

@@ -12,11 +12,12 @@ gem "pg", "~> 1.1"
 # Use the Puma web server [https://github.com/puma/puma]
 gem "puma", "~> 5.0"
 
-gem 'whenever', '~> 1.0'
+gem 'whenever', '~> 1.0', require: false
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 # gem "jbuilder"
 gem 'dotenv-rails', '~> 3.1'
 # Use Redis adapter to run Action Cable in production
+gem 'fcm'
 # gem "redis", "~> 4.0"
 
 gem "jwt", "~> 2.3" # For JWT token encoding/decoding

@@ -6,6 +6,7 @@ Rails.application.routes.draw do
       post 'login', to: 'users#login'
       delete 'logout', to: 'users#logout'
       get 'users/me', to: 'users#me'
+      post :push_token, action: :update_push_token
       put 'users/:id/admin', to: 'users#update_admin'
       get 'predictions', to: 'predictions#index'
       post 'predictions', to: 'predictions#create'

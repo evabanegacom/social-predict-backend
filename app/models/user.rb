@@ -27,6 +27,21 @@ class User < ApplicationRecord
     where('username = ? OR phone = ?', identifier, identifier).first
   end
 
+  def update_streak
+    now = Time.now.utc
+    if last_active_at.nil? || last_active_at < 1.day.ago.beginning_of_day
+      # Reset streak if last activity was before yesterday's start
+      if last_active_at.nil? || last_active_at < 2.days.ago.end_of_day
+        update!(streak: 1, last_active_at: now)
+      else
+        update!(streak: streak + 1, last_active_at: now)
+      end
+    elsif last_active_at > 1.day.ago.beginning_of_day
+      # Already active today, no streak change
+      update!(last_active_at: now)
+    end
+  end
+
   def voting_history
     votes.includes(:prediction).map do |vote|
       {

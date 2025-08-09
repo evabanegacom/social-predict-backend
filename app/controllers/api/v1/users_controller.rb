@@ -43,6 +43,14 @@ class Api::V1::UsersController < ApplicationController
     end
   end
 
+  def update_push_token
+    if current_user.update(push_token: params[:push_token])
+      render json: { status: 200, message: "Push token updated successfully." }, status: :ok
+    else
+      render json: { status: 422, message: current_user.errors.full_messages.join(', ') }, status: :unprocessable_entity
+    end
+  end
+
   def logout
     if current_user
       current_user.update(jti: SecureRandom.uuid)
