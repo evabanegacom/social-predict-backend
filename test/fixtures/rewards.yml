@@ -1,0 +1,15 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  name: MyString
+  description: MyText
+  points_cost: 1
+  reward_type: MyString
+  stock: 1
+
+two:
+  name: MyString
+  description: MyText
+  points_cost: 1
+  reward_type: MyString
+  stock: 1

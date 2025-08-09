@@ -111,29 +111,6 @@ class Api::V1::PredictionsController < ApplicationController
     end
   end
 
-  def votingHistory
-    if @current_user.votes.empty?
-      render json: { status: 200, message: 'No voting history found.', data: [] }, status: :ok
-    else
-      history = @current_user.votes.includes(:prediction).map do |vote|
-        {
-          prediction_id: vote.prediction.id,
-          topic: vote.prediction.topic,
-          category: vote.prediction.category,
-          choice: vote.choice,
-          result: vote.prediction.result,
-          correct: vote.prediction.result && vote.choice == vote.prediction.result,
-          voted_at: vote.created_at.to_i * 1000
-        }
-      end
-      render json: {
-        status: 200,
-        message: 'Voting history retrieved successfully.',
-        data: history
-      }, status: :ok
-    end
-  end
-
   def votes
     @current_user_votes = @current_user.votes.includes(:prediction).map do |vote|
       {

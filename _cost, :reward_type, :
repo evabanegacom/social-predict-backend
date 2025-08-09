@@ -1,0 +1,28 @@
+=> 
+[[32m#<Reward:0x00007215bed819b8[0m
+  id: [34m[1m1[0m,
+  name: [31m[1m"[0m[31m500MB Data[0m[31m[1m"[0m,
+  description: [31m[1m"[0m[31m500MB mobile data voucher[0m[31m[1m"[0m,
+  points_cost: [34m[1m50[0m,
+  reward_type: [31m[1m"[0m[31mdata[0m[31m[1m"[0m,
+  stock: [34m[1m10[0m,
+  created_at: Sat, 09 Aug 2025 15:10:47.412124000 UTC +00:00,
+  updated_at: Sat, 09 Aug 2025 15:10:47.412124000 UTC +00:00[32m>[0m,
+ [32m#<Reward:0x00007215bd4a90d0[0m
+  id: [34m[1m2[0m,
+  name: [31m[1m"[0m[31m₦1000 Airtime[0m[31m[1m"[0m,
+  description: [31m[1m"[0m[31m₦1000 airtime voucher[0m[31m[1m"[0m,
+  points_cost: [34m[1m100[0m,
+  reward_type: [31m[1m"[0m[31mairtime[0m[31m[1m"[0m,
+  stock: [34m[1m5[0m,
+  created_at: Sat, 09 Aug 2025 15:10:47.432813000 UTC +00:00,
+  updated_at: Sat, 09 Aug 2025 15:10:47.432813000 UTC +00:00[32m>[0m,
+ [32m#<Reward:0x00007215bd4eebd0[0m
+  id: [34m[1m3[0m,
+  name: [31m[1m"[0m[31mPredictor Badge[0m[31m[1m"[0m,
+  description: [31m[1m"[0m[31mExclusive badge for your profile[0m[31m[1m"[0m,
+  points_cost: [34m[1m200[0m,
+  reward_type: [31m[1m"[0m[31mbadge[0m[31m[1m"[0m,
+  stock: [34m[1m20[0m,
+  created_at: Sat, 09 Aug 2025 15:10:47.443158000 UTC +00:00,
+  updated_at: Sat, 09 Aug 2025 15:10:47.443158000 UTC +00:00[32m>[0m]

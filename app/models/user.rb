@@ -2,6 +2,8 @@ class User < ApplicationRecord
   has_secure_password
   has_many :votes, dependent: :destroy
   has_many :predictions, dependent: :destroy
+  has_many :user_rewards
+  has_many :rewards, through: :user_rewards
   validates :username, uniqueness: true, allow_blank: true
   validates :phone, uniqueness: true, allow_blank: true
   validates :xp, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
