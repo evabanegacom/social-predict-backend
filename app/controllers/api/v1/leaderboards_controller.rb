@@ -1,5 +1,5 @@
 class Api::V1::LeaderboardsController < ApplicationController
-  # before_action :authenticate_user
+  before_action :authenticate_user
 
   def index
     period = params[:period].in?(%w[weekly monthly all_time]) ? params[:period] : 'all_time'
