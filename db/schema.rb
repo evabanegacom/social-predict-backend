@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_08_10_155539) do
+ActiveRecord::Schema[7.0].define(version: 2025_08_10_192727) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -33,8 +33,11 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_10_155539) do
     t.datetime "awarded_at", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "reward_id"
     t.index ["prediction_id"], name: "index_points_on_prediction_id"
-    t.index ["user_id", "prediction_id"], name: "index_points_on_user_id_and_prediction_id", unique: true
+    t.index ["reward_id"], name: "index_points_on_reward_id"
+    t.index ["user_id", "prediction_id"], name: "index_points_on_user_id_and_prediction_id", unique: true, where: "(prediction_id IS NOT NULL)"
+    t.index ["user_id", "reward_id"], name: "index_points_on_user_id_and_reward_id", unique: true, where: "(reward_id IS NOT NULL)"
     t.index ["user_id"], name: "index_points_on_user_id"
   end
 
@@ -103,6 +106,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_10_155539) do
 
   add_foreign_key "activities", "users"
   add_foreign_key "points", "predictions"
+  add_foreign_key "points", "rewards"
   add_foreign_key "points", "users"
   add_foreign_key "predictions", "users"
   add_foreign_key "user_rewards", "rewards"

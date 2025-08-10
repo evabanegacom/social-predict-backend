@@ -75,17 +75,46 @@ class Api::V1::UsersController < ApplicationController
     }, status: :ok
   end
 
+  # def points_history
+  #   points = @current_user.points.includes(:prediction).map do |point|
+  #     {
+  #       prediction_id: point.prediction_id,
+  #       text: point.prediction.topic,
+  #       category: point.prediction.category,
+  #       choice: point.choice,
+  #       result: point.result,
+  #       points: point.points,
+  #       awarded_at: point.awarded_at.to_i * 1000 # Convert to milliseconds for frontend
+  #     }
+  #   end
+  #   render json: {
+  #     status: 200,
+  #     message: 'Points history retrieved successfully.',
+  #     data: points
+  #   }, status: :ok
+  # end
+
   def points_history
-    points = @current_user.points.includes(:prediction).map do |point|
-      {
-        prediction_id: point.prediction_id,
-        text: point.prediction.topic,
-        category: point.prediction.category,
-        choice: point.choice,
-        result: point.result,
-        points: point.points,
-        awarded_at: point.awarded_at.to_i * 1000 # Convert to milliseconds for frontend
-      }
+    points = @current_user.points.includes(:prediction, :reward).map do |point|
+      if point.prediction
+        {
+          prediction_id: point.prediction_id,
+          text: point.prediction.topic,
+          category: point.prediction.category,
+          choice: point.choice,
+          result: point.result,
+          points: point.points,
+          awarded_at: point.awarded_at.to_i * 1000
+        }
+      else
+        {
+          reward_id: point.reward_id,
+          name: point.reward.name,
+          category: point.reward.reward_type,
+          points: point.points,
+          awarded_at: point.awarded_at.to_i * 1000
+        }
+      end
     end
     render json: {
       status: 200,
