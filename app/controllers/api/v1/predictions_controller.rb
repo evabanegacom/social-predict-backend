@@ -1,13 +1,18 @@
 class Api::V1::PredictionsController < ApplicationController
   before_action :authenticate_user, except: [:index]
-  before_action :set_prediction, only: [:vote]
+  before_action :set_prediction, only: [:vote, :show, :update_status]
   before_action :authorize_admin, only: [:update_status]
 
   def index
-    predictions = Prediction.where(status: 'approved')
+    predictions = Prediction.all
     if params[:category].present?
       predictions = predictions.where(category: params[:category])
     end
+
+    if params[:resolved].present? && params[:resolved] == 'true'
+      predictions = Prediction.where(status: 'resolved')
+    end
+    
     render json: {
       status: 200,
       message: 'Predictions retrieved successfully.',
@@ -16,12 +21,14 @@ class Api::V1::PredictionsController < ApplicationController
           id: p.id,
           text: p.topic,
           user: p.user.username,
+          status: p.status,
           upvotes: p.vote_options['yes'] || 0,
           downvotes: p.vote_options['no'] || 0,
           createdAt: p.created_at.to_i * 1000,
           category: p.category,
           result: p.result,
-          time_left: p.time_left
+          time_left: p.time_left,
+          expires_at: p.expires_at.to_i * 1000
         }
       end
     }, status: :ok
@@ -42,7 +49,9 @@ class Api::V1::PredictionsController < ApplicationController
           createdAt: prediction.created_at.to_i * 1000,
           category: prediction.category,
           result: prediction.result,
-          time_left: prediction.time_left
+          status: prediction.status,
+          time_left: prediction.time_left,
+          expires_at: prediction.expires_at.to_i * 1000
         }
       }, status: :ok
     else
@@ -69,6 +78,7 @@ class Api::V1::PredictionsController < ApplicationController
           createdAt: prediction.created_at.to_i * 1000,
           category: prediction.category,
           result: prediction.result,
+          status: prediction.status,
           time_left: prediction.time_left
         }
       }, status: :created
@@ -78,7 +88,7 @@ class Api::V1::PredictionsController < ApplicationController
   end
 
   def update_status
-    if @prediction.update(status: status_params[:status])
+    if @prediction.update(status_params)
       render json: {
         status: 200,
         message: "Prediction status updated successfully.",
@@ -91,7 +101,8 @@ class Api::V1::PredictionsController < ApplicationController
           status: @prediction.status,
           user_id: @prediction.user_id,
           created_at: @prediction.created_at,
-          updated_at: @prediction.updated_at
+          updated_at: @prediction.updated_at,
+          expires_at: @prediction.expires_at.to_i * 1000
         }
       }
     else
@@ -130,17 +141,29 @@ class Api::V1::PredictionsController < ApplicationController
   # end
 
   def votes
+    valid_results = ["Yes", "No"]
+  
     @current_user_votes = @current_user.votes.includes(:prediction).map do |vote|
+      if vote.prediction.result.nil?
+        points = 0
+        correct = false
+      else
+        correct = valid_results.include?(vote.prediction.result) && vote.choice == vote.prediction.result
+        points = correct ? 10 : -2
+      end
+  
       {
         prediction_id: vote.prediction.id,
         topic: vote.prediction.topic,
         category: vote.prediction.category,
         choice: vote.choice,
         result: vote.prediction.result,
-        correct: vote.prediction.result && vote.choice == vote.prediction.result,
+        points: points,
+        correct: correct,
         voted_at: vote.created_at.to_i * 1000
       }
     end
+  
     if @current_user_votes.empty?
       render json: { status: 200, message: 'No votes found for the user.', data: [] }, status: :ok
     else
@@ -151,6 +174,9 @@ class Api::V1::PredictionsController < ApplicationController
       }, status: :ok
     end
   end
+  
+  
+  
 
 
   private
@@ -161,11 +187,17 @@ class Api::V1::PredictionsController < ApplicationController
     render json: { status: 404, message: 'Prediction not found.' }, status: :not_found
   end
 
+  def authorize_admin
+    unless @current_user&.admin?
+      render json: { error: "Unauthorized" }, status: :unauthorized
+    end
+  end
+
   def prediction_params
     params.require(:prediction).permit(:topic, :category, :expires_at)
   end
 
   def status_params
-    params.permit(:status)
+    params.permit(:status, :result)
   end
 end
