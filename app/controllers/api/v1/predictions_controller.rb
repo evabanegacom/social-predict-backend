@@ -1,6 +1,6 @@
 class Api::V1::PredictionsController < ApplicationController
   before_action :authenticate_user, except: [:index]
-  before_action :set_prediction, only: [:vote, :show, :update_status]
+  before_action :set_prediction, only: [:vote, :show, :update_status, :approve , :reject_prediction, :destroy]
   before_action :authorize_admin, only: [:update_status]
 
   def index
@@ -89,6 +89,25 @@ class Api::V1::PredictionsController < ApplicationController
 
   def update_status
     if @prediction.update(status_params)
+      # Award/deduct points if resolved and result is present
+      if @prediction.result.present? && @prediction.status == 'resolved'
+        @prediction.votes.includes(:user).find_each do |vote|
+          user = vote.user
+          points = (vote.choice == @prediction.result) ? 10 : -2
+  
+          # Update XP (never below 0)
+          user.update(xp: [user.xp + points, 0].max)
+  
+          # Record points history if not already stored
+          Point.find_or_create_by(user: user, prediction: @prediction) do |point|
+            point.points = points
+            point.choice = vote.choice
+            point.result = @prediction.result
+            point.awarded_at = Time.current
+          end
+        end
+      end
+  
       render json: {
         status: 200,
         message: "Prediction status updated successfully.",
@@ -97,23 +116,26 @@ class Api::V1::PredictionsController < ApplicationController
           topic: @prediction.topic,
           category: @prediction.category,
           vote_options: @prediction.vote_options,
-          expires_at: @prediction.expires_at,
+          expires_at: @prediction.expires_at.to_i * 1000,
           status: @prediction.status,
           user_id: @prediction.user_id,
           created_at: @prediction.created_at,
-          updated_at: @prediction.updated_at,
-          expires_at: @prediction.expires_at.to_i * 1000
+          updated_at: @prediction.updated_at
         }
-      }
+      }, status: :ok
+  
     else
-      render json: { status: 422, message: @prediction.errors.full_messages }, status: :unprocessable_entity
+      render json: {
+        status: 422,
+        message: @prediction.errors.full_messages
+      }, status: :unprocessable_entity
     end
-  end
+  end  
 
   def approve
     if @prediction.status == 'pending'
       if @prediction.update(status: 'approved')
-        @current_user.activities.create!(action: 'approved_prediction', target_type: 'Prediction', target_id: @prediction.id)
+        # @current_user.activities.create!(action: 'approved_prediction', target_type: 'Prediction', target_id: @prediction.id)
         render json: {
           status: 200,
           message: 'Prediction approved successfully.',
@@ -143,7 +165,7 @@ class Api::V1::PredictionsController < ApplicationController
     prediction = Prediction.find_by(id: params[:id])
     if prediction
       prediction.update(status: 'rejected')
-      @current_user.activities.create!(action: 'rejected_prediction', target_type: 'Prediction', target_id: @prediction.id)
+      # @current_user.activities.create!(action: 'rejected_prediction', target_type: 'Prediction', target_id: @prediction.id)
       render json: {
         status: 200,
         message: 'Prediction rejected successfully.',
@@ -167,7 +189,7 @@ class Api::V1::PredictionsController < ApplicationController
 
   def destroy
     if @prediction.destroy
-      @current_user.activities.create!(action: 'deleted_prediction', target_type: 'Prediction', target_id: @prediction.id)
+      # @current_user.activities.create!(action: 'deleted_prediction', target_type: 'Prediction', target_id: @prediction.id)
       render json: {
         status: 200,
         message: 'Prediction deleted successfully.'
@@ -192,20 +214,6 @@ class Api::V1::PredictionsController < ApplicationController
       render json: { status: 422, message: vote.errors.full_messages.join(', ') }, status: :unprocessable_entity
     end
   end
-
-  # def vote
-  #   vote = @current_user.votes.build(prediction: @prediction, choice: params[:choice])
-  #   if vote.save
-  #     @prediction.update_vote_counts
-  #     render json: {
-  #       status: 200,
-  #       message: 'Vote submitted successfully.',
-  #       data: { prediction_id: @prediction.id, choice: vote.choice, vote_options: @prediction.vote_options }
-  #     }, status: :ok
-  #   else
-  #     render json: { status: 422, message: vote.errors.full_messages.join(', ') }, status: :unprocessable_entity
-  #   end
-  # end
 
   def votes
     valid_results = ["Yes", "No"]
@@ -242,9 +250,6 @@ class Api::V1::PredictionsController < ApplicationController
     end
   end
   
-  
-  
-
 
   private
 

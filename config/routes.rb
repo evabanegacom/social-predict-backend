@@ -2,7 +2,6 @@ Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
       post 'signup', to: 'users#create'
-      post 'users', to: 'users#create'
       post 'login', to: 'users#login'
       delete 'logout', to: 'users#logout'
       get 'users/me', to: 'users#me'
@@ -12,6 +11,7 @@ Rails.application.routes.draw do
       post 'predictions', to: 'predictions#create'
       post 'predictions/:id/vote', to: 'predictions#vote'
       get  'predictions/votes', to: 'predictions#votes'
+      get 'points_history', to: 'users#points_history'
       put 'predictions/:id/status', to: 'predictions#update_status'
       put  'predictions/:id/approve', to: 'predictions#approve'
       put  'predictions/:id/reject', to: 'predictions#reject'

@@ -1,6 +1,6 @@
 class Api::V1::UsersController < ApplicationController
   # skip_before_action :authenticate_user, only: [:create, :login]
-  before_action :authenticate_user, only: [:me, :logout]
+  before_action :authenticate_user, only: [:me, :logout, :update_push_token, :points_history]
   before_action :set_user, only: [:update_admin]
   # before_action :authorize_admin, only: [:update_admin]
 
@@ -69,8 +69,28 @@ class Api::V1::UsersController < ApplicationController
         username: @current_user.username,
         phone: @current_user.phone,
         points: @current_user.xp,
-        voting_history: @current_user.voting_history
+        voting_history: @current_user.voting_history,
+        admin: @current_user.admin,
       }
+    }, status: :ok
+  end
+
+  def points_history
+    points = @current_user.points.includes(:prediction).map do |point|
+      {
+        prediction_id: point.prediction_id,
+        text: point.prediction.topic,
+        category: point.prediction.category,
+        choice: point.choice,
+        result: point.result,
+        points: point.points,
+        awarded_at: point.awarded_at.to_i * 1000 # Convert to milliseconds for frontend
+      }
+    end
+    render json: {
+      status: 200,
+      message: 'Points history retrieved successfully.',
+      data: points
     }, status: :ok
   end
 
