@@ -22,46 +22,63 @@ class Api::V1::RewardsController < ApplicationController
     end
   end
 
-  def redeem
-    unless @reward
-      return render json: { error: "Unable to redeem reward." }, status: :unprocessable_entity
-    end
+
+def redeem
+    return render json: { error: "Unable to redeem reward." }, status: :unprocessable_entity unless @reward
   
-    Rails.logger.debug "current_user.points: #{@current_user.points.inspect} (#{@current_user.points.class})"
-    Rails.logger.debug "reward.points_cost: #{@reward.points_cost.inspect} (#{@reward.points_cost.class})"
-
-    user_total_points = @current_user.points.sum(:points)  # sums all Point.points values for the user
-
+    user_total_points = @current_user.points.sum(:points)
+  
     if user_total_points < @reward.points_cost
       return render json: { status: 400, message: "Not enough points" }, status: :bad_request
     end
-
   
     ActiveRecord::Base.transaction do
-      # Deduct points — assuming points is an association or points log model
       @current_user.points.create!(
         points: -@reward.points_cost,
-        user_id: @current_user.id,
-        reward_id: @reward.id,
-        awarded_at: Time.current,
-        # result: "redeemed",
-        prediction_id: @current_user.predictions.last&.id,
-        choice: nil, # Assuming no choice is needed for rewards
+        reward: @reward,
+        choice: 'Yes',
+        result: 'Yes',
+        awarded_at: Time.now.utc
       )
   
-      # Create redemption record
+      total_points = @current_user.points.sum(:points)
+    #   @current_user.update!(points: total_points)
+  
+      @reward.update!(stock: @reward.stock - 1)
+  
+      code = ['airtime', 'data', 'badge'].include?(@reward.reward_type) ? generate_unique_code : nil
+  
       user_reward = @current_user.user_rewards.create!(
         reward: @reward,
         redeemed_at: Time.now.utc,
-        code: (['airtime', 'data', 'badge'].include?(@reward.reward_type) ? generate_unique_code : nil)
-      )      
-    end
+        code: code,
+      )
   
-    render json: { status: 200, message: "Reward redeemed successfully." }, status: :ok
+      @current_user.activities.create!(
+        action: 'redeemed_reward',
+        target_type: 'Reward',
+        target_id: @reward.id
+      )
+  
+      render json: {
+        status: 200,
+        message: "Reward redeemed successfully.",
+        data: {
+          points_remaining: total_points,
+          reward: {
+            id: @reward.id,
+            name: @reward.name,
+            stock: @reward.stock
+          },
+          code: user_reward.code
+        }
+      }, status: :ok
+    end
   
   rescue ActiveRecord::RecordInvalid => e
     render json: { status: 422, message: e.record.errors.full_messages.join(", ") }, status: :unprocessable_entity
   end
+  
   
   
 
