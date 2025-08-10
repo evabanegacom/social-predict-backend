@@ -110,6 +110,73 @@ class Api::V1::PredictionsController < ApplicationController
     end
   end
 
+  def approve
+    if @prediction.status == 'pending'
+      if @prediction.update(status: 'approved')
+        @current_user.activities.create!(action: 'approved_prediction', target_type: 'Prediction', target_id: @prediction.id)
+        render json: {
+          status: 200,
+          message: 'Prediction approved successfully.',
+          data: {
+            id: @prediction.id,
+            topic: @prediction.topic,
+            category: @prediction.category,
+            vote_options: @prediction.vote_options,
+            expires_at: @prediction.expires_at,
+            status: @prediction.status,
+            user_id: @prediction.user_id,
+            created_at: @prediction.created_at,
+            updated_at: @prediction.updated_at,
+            expires_at: @prediction.expires_at.to_i * 1000
+          }
+        }, status: :ok
+      else
+        render json: { status: 422, message: @prediction.errors.full_messages.join(', ') }, status: :unprocessable_entity
+      end
+    else
+      render json: { status: 400, message: 'Prediction is not in pending state.' }, status: :bad_request
+    end
+  end
+
+
+  def reject_prediction
+    prediction = Prediction.find_by(id: params[:id])
+    if prediction
+      prediction.update(status: 'rejected')
+      @current_user.activities.create!(action: 'rejected_prediction', target_type: 'Prediction', target_id: @prediction.id)
+      render json: {
+        status: 200,
+        message: 'Prediction rejected successfully.',
+        data: {
+          id: prediction.id,
+          topic: prediction.topic,
+          category: prediction.category,
+          vote_options: prediction.vote_options,
+          expires_at: prediction.expires_at,
+          status: prediction.status,
+          user_id: prediction.user_id,
+          created_at: prediction.created_at,
+          updated_at: prediction.updated_at,
+          expires_at: prediction.expires_at.to_i * 1000
+        }
+      }, status: :ok
+    else
+      render json: { status: 404, message: 'Prediction not found.' }, status: :not_found
+    end
+  end
+
+  def destroy
+    if @prediction.destroy
+      @current_user.activities.create!(action: 'deleted_prediction', target_type: 'Prediction', target_id: @prediction.id)
+      render json: {
+        status: 200,
+        message: 'Prediction deleted successfully.'
+      }, status: :ok
+    else
+      render json: { status: 422, message: @prediction.errors.full_messages.join(', ') }, status: :unprocessable_entity
+    end
+  end
+
   def vote
     vote = @current_user.votes.build(prediction: @prediction, choice: params[:choice])
     if vote.save

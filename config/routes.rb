@@ -13,6 +13,9 @@ Rails.application.routes.draw do
       post 'predictions/:id/vote', to: 'predictions#vote'
       get  'predictions/votes', to: 'predictions#votes'
       put 'predictions/:id/status', to: 'predictions#update_status'
+      put  'predictions/:id/approve', to: 'predictions#approve'
+      put  'predictions/:id/reject', to: 'predictions#reject'
+      delete 'predictions/:id', to: 'predictions#destroy'
       get 'predictions/:id', to: 'predictions#show'
       get 'leaderboards', to: 'leaderboards#index'
       resources :activities, only: [:index]
