@@ -1,6 +1,6 @@
 class Api::V1::UsersController < ApplicationController
   # skip_before_action :authenticate_user, only: [:create, :login]
-  before_action :authenticate_user, only: [:me]
+  before_action :authenticate_user, only: [:me, :logout, :update_push_token, :points_history]
   before_action :set_user, only: [:update_admin]
   # before_action :authorize_admin, only: [:update_admin]
 
@@ -8,7 +8,10 @@ class Api::V1::UsersController < ApplicationController
     user = User.new(user_params)
     if user.save
       token = encode_token(user)
-      render json: { status: 200, message: 'Signed up successfully.', data: { user: user, token: token } }, status: :ok
+      render json: { status: 200, message: 'Signed up successfully.', data: {
+        user: user.as_json(except: [:password_digest]),
+        token: token
+      } }, status: :ok
     else
       render json: { status: 422, message: user.errors.full_messages.join(', ') }, status: :unprocessable_entity
     end
@@ -21,7 +24,10 @@ class Api::V1::UsersController < ApplicationController
     user = User.find_by(username: identifier) || User.find_by(phone: identifier)
     if user&.authenticate(params[:password])
       token = encode_token(user)
-      render json: { status: 200, message: 'Logged in successfully.', data: { user: user, token: token } }, status: :ok
+      render json: { status: 200, message: 'Logged in successfully.', data: {
+        user: user.as_json(except: [:password_digest]),
+        token: token
+      } }, status: :ok
     else
       render json: { status: 401, message: 'Invalid identifier or password.' }, status: :unauthorized
     end
@@ -43,9 +49,17 @@ class Api::V1::UsersController < ApplicationController
     end
   end
 
+  def update_push_token
+    if current_user.update(push_token: params[:push_token])
+      render json: { status: 200, message: "Push token updated successfully." }, status: :ok
+    else
+      render json: { status: 422, message: current_user.errors.full_messages.join(', ') }, status: :unprocessable_entity
+    end
+  end
+
   def logout
-    if current_user
-      current_user.update(jti: SecureRandom.uuid)
+    if @current_user
+      @current_user.update(jti: SecureRandom.uuid)
       render json: { status: 200, message: 'Logged out successfully.' }, status: :ok
     else
       render json: { status: 401, message: 'No active session.' }, status: :unauthorized
@@ -61,16 +75,70 @@ class Api::V1::UsersController < ApplicationController
         username: @current_user.username,
         phone: @current_user.phone,
         points: @current_user.xp,
-        voting_history: @current_user.voting_history
+        voting_history: @current_user.voting_history,
+        admin: @current_user.admin,
       }
+    }, status: :ok
+  end
+
+  # def points_history
+  #   points = @current_user.points.includes(:prediction).map do |point|
+  #     {
+  #       prediction_id: point.prediction_id,
+  #       text: point.prediction.topic,
+  #       category: point.prediction.category,
+  #       choice: point.choice,
+  #       result: point.result,
+  #       points: point.points,
+  #       awarded_at: point.awarded_at.to_i * 1000 # Convert to milliseconds for frontend
+  #     }
+  #   end
+  #   render json: {
+  #     status: 200,
+  #     message: 'Points history retrieved successfully.',
+  #     data: points
+  #   }, status: :ok
+  # end
+
+  def points_history
+    points = @current_user.points.includes(:prediction, :reward).map do |point|
+      if point.prediction
+        {
+          prediction_id: point.prediction_id,
+          text: point.prediction.topic,
+          category: point.prediction.category,
+          choice: point.choice,
+          result: point.result,
+          points: point.points,
+          awarded_at: point.awarded_at.to_i * 1000
+        }
+      else
+        {
+          reward_id: point.reward_id,
+          name: point.reward.name,
+          category: point.reward.reward_type,
+          points: point.points,
+          choice: point.choice,
+          result: point.result,
+          awarded_at: point.awarded_at.to_i * 1000
+        }
+      end
+    end
+    render json: {
+      status: 200,
+      message: 'Points history retrieved successfully.',
+      data: points
     }, status: :ok
   end
 
   private
 
   def user_params
-    params.require(:user).permit(:username, :phone, :password, :password_confirmation)
+    permitted = params.require(:user).permit(:username, :phone, :password, :password_confirmation)
+    permitted[:phone] = nil if permitted[:phone].blank?
+    permitted
   end
+  
 
   def admin_params
     params.require(:user).permit(:admin)

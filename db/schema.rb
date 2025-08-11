@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_08_09_153720) do
+ActiveRecord::Schema[7.0].define(version: 2025_08_10_210929) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -22,6 +22,23 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_09_153720) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["user_id"], name: "index_activities_on_user_id"
+  end
+
+  create_table "points", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "prediction_id"
+    t.integer "points", null: false
+    t.string "choice", null: false
+    t.string "result", null: false
+    t.datetime "awarded_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "reward_id"
+    t.index ["prediction_id"], name: "index_points_on_prediction_id"
+    t.index ["reward_id"], name: "index_points_on_reward_id"
+    t.index ["user_id", "prediction_id"], name: "index_points_on_user_id_and_prediction_id", unique: true, where: "(prediction_id IS NOT NULL)"
+    t.index ["user_id", "reward_id"], name: "index_points_on_user_id_and_reward_id", unique: true, where: "(reward_id IS NOT NULL)"
+    t.index ["user_id"], name: "index_points_on_user_id"
   end
 
   create_table "predictions", force: :cascade do |t|
@@ -68,6 +85,9 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_09_153720) do
     t.integer "xp", default: 0
     t.integer "points", default: 0, null: false
     t.boolean "admin", default: false, null: false
+    t.integer "streak", default: 0, null: false
+    t.datetime "last_active_at"
+    t.string "push_token"
     t.index ["jti"], name: "index_users_on_jti", unique: true
     t.index ["phone"], name: "index_users_on_phone", unique: true
     t.index ["username"], name: "index_users_on_username", unique: true
@@ -85,6 +105,9 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_09_153720) do
   end
 
   add_foreign_key "activities", "users"
+  add_foreign_key "points", "predictions"
+  add_foreign_key "points", "rewards"
+  add_foreign_key "points", "users"
   add_foreign_key "predictions", "users"
   add_foreign_key "user_rewards", "rewards"
   add_foreign_key "user_rewards", "users"

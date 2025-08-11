@@ -1,80 +1,123 @@
 
 class Api::V1::RewardsController < ApplicationController
-before_action :authenticate_user
-before_action :set_reward, only: [:redeem]
-before_action :authorize_admin, only: [:create, :update, :destroy]
+  before_action :authenticate_user
+  before_action :set_reward, only: [:redeem]
+  before_action :authorize_admin, only: [:create, :update, :destroy]
 
-def index
-    rewards = Reward.all
+  def index
+    # Get reward IDs the user has already redeemed
+    redeemed_reward_ids = @current_user.user_rewards.select(:reward_id)
+  
+    # Fetch rewards that have stock > 0 and are NOT redeemed by current user
+    rewards = Reward.where('stock > 0').where.not(id: redeemed_reward_ids)
+  
     render json: {
-    status: 200,
-    message: "Rewards retrieved successfully.",
-    data: rewards.map { |r| { id: r.id, name: r.name, description: r.description, points_cost: r.points_cost, reward_type: r.reward_type, stock: r.stock } }
+      status: 200,
+      message: "Rewards retrieved successfully.",
+      data: rewards.map { |r| 
+        { 
+          id: r.id, 
+          name: r.name, 
+          description: r.description, 
+          points_cost: r.points_cost, 
+          reward_type: r.reward_type, 
+          stock: r.stock 
+        } 
+      }
     }, status: :ok
-end
+  end  
 
-def create
+  def create
     reward = Reward.new(reward_params)
     if reward.save
-    render json: { status: 201, message: "Reward created successfully.", data: reward }, status: :created
+      render json: { status: 201, message: "Reward created successfully.", data: reward }, status: :created
     else
-    render json: { status: 422, message: reward.errors.full_messages.join(', ') }, status: :unprocessable_entity
+      render json: { status: 422, message: reward.errors.full_messages.join(', ') }, status: :unprocessable_entity
     end
-end
+  end
+
 
 def redeem
-    if @reward.stock <= 0
-    return render json: { status: 422, message: "Reward out of stock." }, status: :unprocessable_entity
+    return render json: { error: "Unable to redeem reward." }, status: :unprocessable_entity unless @reward
+  
+    user_total_points = @current_user.points.sum(:points)
+    puts "User total points: #{user_total_points}, Reward points cost: #{@reward.points_cost}"
+    if user_total_points < @reward.points_cost
+      return render json: { status: 400, message: "Not enough points" }, status: :bad_request
     end
-    if @current_user.points < @reward.points_cost
-    return render json: { status: 422, message: "Insufficient points." }, status: :unprocessable_entity
-    end
-
+  
     ActiveRecord::Base.transaction do
-    @current_user.update!(points: @current_user.points - @reward.points_cost)
-    @reward.update!(stock: @reward.stock - 1)
-    code = @reward.reward_type.in?(['airtime', 'data']) ? generate_unique_code : nil
-    user_reward = @current_user.user_rewards.create!(reward: @reward, redeemed_at: Time.now.utc, code: code)
-    @current_user.activities.create!(action: 'redeemed_reward', target_type: 'Reward', target_id: @reward.id)
-    render json: {
+      @current_user.points.create!(
+        points: -@reward.points_cost,
+        reward: @reward,
+        choice: 'reward_redemption',
+        result: 'reward_redemption',
+        awarded_at: Time.now.utc
+      )
+  
+      total_points = @current_user.points.sum(:points)
+      # @current_user.update!(points: total_points)
+  
+      @reward.update!(stock: @reward.stock - 1)
+  
+      code = ['airtime', 'data', 'badge'].include?(@reward.reward_type) ? generate_unique_code : nil
+  
+      user_reward = @current_user.user_rewards.create!(
+        reward: @reward,
+        redeemed_at: Time.now.utc,
+        code: code,
+      )
+  
+      @current_user.activities.create!(
+        action: 'redeemed_reward',
+        target_type: 'Reward',
+        target_id: @reward.id
+      )
+  
+      render json: {
         status: 200,
         message: "Reward redeemed successfully.",
         data: {
-        user_id: @current_user.id,
-        reward_id: @reward.id,
-        name: @reward.name,
-        code: user_reward.code,
-        points_remaining: @current_user.points,
-        redeemed_at: user_reward.redeemed_at
+          points_remaining: total_points,
+          reward: {
+            id: @reward.id,
+            name: @reward.name,
+            stock: @reward.stock
+          },
+          code: user_reward.code
         }
-    }, status: :ok
-    rescue ActiveRecord::RecordInvalid => e
-    render json: { status: 422, message: e.message }, status: :unprocessable_entity
+      }, status: :ok
     end
-end
+  
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { status: 422, message: e.record.errors.full_messages.join(", ") }, status: :unprocessable_entity
+  end
+  
+  
+  
 
-private
+  private
 
-def set_reward
+  def set_reward
     @reward = Reward.find(params[:id])
-rescue ActiveRecord::RecordNotFound
+  rescue ActiveRecord::RecordNotFound
     render json: { status: 404, message: "Reward not found." }, status: :not_found
-end
+  end
 
-def reward_params
+  def reward_params
     params.require(:reward).permit(:name, :description, :points_cost, :reward_type, :stock)
-end
+  end
 
-def authorize_admin
-    unless current_user.admin?
-    render json: { status: 403, message: "Unauthorized: Admin access required." }, status: :forbidden
+  def authorize_admin
+    unless @current_user.admin?
+      render json: { status: 403, message: "Unauthorized: Admin access required." }, status: :forbidden
     end
-end
+  end
 
-def generate_unique_code
+  def generate_unique_code
     loop do
-    code = SecureRandom.alphanumeric(10).upcase
-    break code unless UserReward.exists?(code: code)
+      code = SecureRandom.alphanumeric(10).upcase
+      break code unless UserReward.exists?(code: code)
     end
-end
+  end
 end
