@@ -5,13 +5,27 @@ class Api::V1::RewardsController < ApplicationController
   before_action :authorize_admin, only: [:create, :update, :destroy]
 
   def index
-    rewards = Reward.all
+    # Get reward IDs the user has already redeemed
+    redeemed_reward_ids = @current_user.user_rewards.select(:reward_id)
+  
+    # Fetch rewards that have stock > 0 and are NOT redeemed by current user
+    rewards = Reward.where('stock > 0').where.not(id: redeemed_reward_ids)
+  
     render json: {
       status: 200,
       message: "Rewards retrieved successfully.",
-      data: rewards.map { |r| { id: r.id, name: r.name, description: r.description, points_cost: r.points_cost, reward_type: r.reward_type, stock: r.stock } }
+      data: rewards.map { |r| 
+        { 
+          id: r.id, 
+          name: r.name, 
+          description: r.description, 
+          points_cost: r.points_cost, 
+          reward_type: r.reward_type, 
+          stock: r.stock 
+        } 
+      }
     }, status: :ok
-  end
+  end  
 
   def create
     reward = Reward.new(reward_params)
@@ -27,7 +41,7 @@ def redeem
     return render json: { error: "Unable to redeem reward." }, status: :unprocessable_entity unless @reward
   
     user_total_points = @current_user.points.sum(:points)
-  
+    puts "User total points: #{user_total_points}, Reward points cost: #{@reward.points_cost}"
     if user_total_points < @reward.points_cost
       return render json: { status: 400, message: "Not enough points" }, status: :bad_request
     end
@@ -36,13 +50,13 @@ def redeem
       @current_user.points.create!(
         points: -@reward.points_cost,
         reward: @reward,
-        choice: 'Yes',
-        result: 'Yes',
+        choice: 'reward_redemption',
+        result: 'reward_redemption',
         awarded_at: Time.now.utc
       )
   
       total_points = @current_user.points.sum(:points)
-    #   @current_user.update!(points: total_points)
+      # @current_user.update!(points: total_points)
   
       @reward.update!(stock: @reward.stock - 1)
   

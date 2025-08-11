@@ -8,7 +8,10 @@ class Api::V1::UsersController < ApplicationController
     user = User.new(user_params)
     if user.save
       token = encode_token(user)
-      render json: { status: 200, message: 'Signed up successfully.', data: { user: user, token: token } }, status: :ok
+      render json: { status: 200, message: 'Signed up successfully.', data: {
+        user: user.as_json(except: [:password_digest]),
+        token: token
+      } }, status: :ok
     else
       render json: { status: 422, message: user.errors.full_messages.join(', ') }, status: :unprocessable_entity
     end
@@ -21,7 +24,10 @@ class Api::V1::UsersController < ApplicationController
     user = User.find_by(username: identifier) || User.find_by(phone: identifier)
     if user&.authenticate(params[:password])
       token = encode_token(user)
-      render json: { status: 200, message: 'Logged in successfully.', data: { user: user, token: token } }, status: :ok
+      render json: { status: 200, message: 'Logged in successfully.', data: {
+        user: user.as_json(except: [:password_digest]),
+        token: token
+      } }, status: :ok
     else
       render json: { status: 401, message: 'Invalid identifier or password.' }, status: :unauthorized
     end
@@ -112,6 +118,8 @@ class Api::V1::UsersController < ApplicationController
           name: point.reward.name,
           category: point.reward.reward_type,
           points: point.points,
+          choice: point.choice,
+          result: point.result,
           awarded_at: point.awarded_at.to_i * 1000
         }
       end

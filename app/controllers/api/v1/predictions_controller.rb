@@ -205,6 +205,8 @@ class Api::V1::PredictionsController < ApplicationController
       @prediction.update_vote_counts
       @current_user.activities.create!(action: 'voted', target_type: 'Prediction', target_id: @prediction.id)
       @current_user.update_streak # Update streak
+      UserXpUpdater.update(@current_user.id)   # assuming you made this service from previous suggestion
+
       render json: {
         status: 200,
         message: 'Vote submitted successfully.',
