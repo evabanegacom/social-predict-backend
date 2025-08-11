@@ -83,9 +83,9 @@ GEM
       reline (>= 0.3.8)
     dockerfile-rails (1.7.10)
       rails (>= 3.0.0)
-    dotenv (3.1.0)
-    dotenv-rails (3.1.0)
-      dotenv (= 3.1.0)
+    dotenv (3.1.8)
+    dotenv-rails (3.1.8)
+      dotenv (= 3.1.8)
       railties (>= 6.1)
     erb (4.0.4)
       cgi (>= 0.3.3)
@@ -123,7 +123,7 @@ GEM
     json (2.13.2)
     jwt (2.10.2)
       base64
-    logger (1.7.0)
+    logger (1.5.0)
     loofah (2.24.1)
       crass (~> 1.0.2)
       nokogiri (>= 1.12.0)
@@ -239,6 +239,7 @@ DEPENDENCIES
   dotenv-rails (~> 3.1)
   fcm
   jwt (~> 2.3)
+  logger (= 1.5.0)
   pg (~> 1.1)
   puma (~> 5.0)
   rack-cors
@@ -250,4 +251,4 @@ RUBY VERSION
    ruby 3.1.2p20
 
 BUNDLED WITH
-   2.3.22
+   2.6.9
