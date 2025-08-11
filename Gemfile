@@ -19,6 +19,8 @@ gem 'dotenv-rails', '~> 3.1'
 # Use Redis adapter to run Action Cable in production
 gem 'fcm'
 # gem "redis", "~> 4.0"
+gem "logger", "1.5.0"
+
 
 gem "jwt", "~> 2.3" # For JWT token encoding/decoding
 
@@ -50,3 +52,5 @@ group :development do
   # gem "spring"
 end
 
+
+gem "dockerfile-rails", ">= 1.7", :group => :development

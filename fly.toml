@@ -1,0 +1,23 @@
+# fly.toml app configuration file generated for predict-backend on 2025-08-11T14:29:06+01:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'predict-backend'
+primary_region = 'jnb'
+console_command = '/rails/bin/rails console'
+
+[build]
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
