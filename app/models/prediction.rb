@@ -9,8 +9,8 @@ class Prediction < ApplicationRecord
   validates :user_id, presence: true
   validates :status, inclusion: { in: %w[pending approved resolved rejected], message: "%{value} is not a valid status" }
   validates :result, inclusion: { in: %w[Yes No], allow_nil: true }
-  validate :expires_at_in_future
-  validate :expires_at_within_range
+  # validate :expires_at_in_future
+  # validate :expires_at_within_range
 
   after_update :process_points, if: :result_changed?
 
